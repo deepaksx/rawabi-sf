@@ -99,6 +99,16 @@ class Presentation {
                 e.preventDefault();
                 this.toggleFullscreen();
                 break;
+            case 'p':
+            case 'P':
+                e.preventDefault();
+                this.togglePresenterNotes();
+                break;
+            case 'a':
+            case 'A':
+                e.preventDefault();
+                this.toggleAudienceWindow();
+                break;
             case 'Escape':
                 if (document.fullscreenElement) {
                     document.exitFullscreen();
@@ -133,6 +143,14 @@ class Presentation {
 
         // Update UI
         this.updateUI();
+
+        // Update presenter notes if in presenter mode
+        if (document.body.classList.contains('presenter-mode')) {
+            this.updatePresenterNotes();
+        }
+
+        // Sync audience window if open
+        this.syncAudienceWindow();
 
         // Animate counters on this slide
         this.animateCountersOnSlide(index);
@@ -240,6 +258,206 @@ class Presentation {
             document.exitFullscreen();
         }
     }
+
+    // ==========================================
+    // Presenter Notes (P key)
+    // ==========================================
+    togglePresenterNotes() {
+        if (document.body.classList.contains('presenter-mode')) {
+            document.body.classList.remove('presenter-mode');
+            console.log('%c Presenter Notes: OFF ', 'background: #333; color: white; font-weight: bold; padding: 5px 10px; border-radius: 4px;');
+        } else {
+            document.body.classList.add('presenter-mode');
+            this.updatePresenterNotes();
+            console.log('%c Presenter Notes: ON ', 'background: #C8102E; color: white; font-weight: bold; padding: 5px 10px; border-radius: 4px;');
+        }
+    }
+
+    // ==========================================
+    // Audience Window (A key)
+    // ==========================================
+    toggleAudienceWindow() {
+        if (this.audienceWindow && !this.audienceWindow.closed) {
+            this.audienceWindow.close();
+            this.audienceWindow = null;
+            console.log('%c Audience Window: CLOSED ', 'background: #333; color: white; font-weight: bold; padding: 5px 10px; border-radius: 4px;');
+        } else {
+            this.openAudienceWindow();
+            console.log('%c Audience Window: OPENED ', 'background: #C8102E; color: white; font-weight: bold; padding: 5px 10px; border-radius: 4px;');
+            console.log('%c Drag the window to your TV/projector and press F for fullscreen ', 'background: #333; color: #fff; padding: 5px 10px;');
+        }
+    }
+
+    openAudienceWindow() {
+        // Open a new window for the audience (TV/projector)
+        this.audienceWindow = window.open('', 'AudienceView', 'width=1280,height=720');
+
+        if (!this.audienceWindow) {
+            alert('Please allow popups for presenter mode to work.\n\nThe audience window will open on your TV/projector.');
+            return;
+        }
+
+        // Clone the current page for audience view
+        const audienceDoc = this.audienceWindow.document;
+        audienceDoc.open();
+        audienceDoc.write(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al Rawabi - Audience View</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Hide presenter-only elements */
+        .presenter-notes, .presenter-notes-panel, .presenter-mode-indicator,
+        .keyboard-hints, .slide-titles-nav, .nav-arrows, .slide-indicators {
+            display: none !important;
+            width: 0 !important;
+        }
+        body {
+            cursor: none;
+            background: #0a0a0a;
+            overflow: hidden;
+        }
+
+        /* Full width presentation - remove left nav space */
+        .presentation {
+            margin-left: 0 !important;
+            width: 100% !important;
+            left: 0 !important;
+        }
+        .progress-bar {
+            left: 0 !important;
+            width: 100% !important;
+        }
+        .slide-counter {
+            right: 40px !important;
+        }
+        .slide {
+            width: 100% !important;
+        }
+        .slide-content {
+            margin-right: 0 !important;
+            margin-left: auto !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="slide-counter" id="slideCounter">
+        <span class="current">01</span>
+        <span class="divider">/</span>
+        <span class="total">39</span>
+    </div>
+    <div class="presentation" id="presentation">
+        ${document.getElementById('presentation').innerHTML}
+    </div>
+    <script>
+        // Sync with presenter window
+        let currentSlide = ${this.currentSlide};
+        const slides = document.querySelectorAll('.slide');
+
+        function goToSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active', 'prev', 'next');
+                if (i < index) slide.classList.add('prev');
+                else if (i > index) slide.classList.add('next');
+            });
+            slides[index].classList.add('active');
+
+            // Update progress
+            const progress = ((index + 1) / slides.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('slideCounter').querySelector('.current').textContent =
+                String(index + 1).padStart(2, '0');
+        }
+
+        goToSlide(currentSlide);
+
+        // Counter animation function
+        function formatNumber(num) {
+            return num.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
+        }
+
+        function animateCountersOnSlide(slideIndex) {
+            const slide = slides[slideIndex];
+            const counters = slide.querySelectorAll('[data-count]');
+
+            counters.forEach(counter => {
+                if (counter.dataset.animated === 'true') return;
+
+                const target = parseInt(counter.dataset.count);
+                const duration = 2000;
+                const steps = 60;
+                const stepDuration = duration / steps;
+                const increment = target / steps;
+                let current = 0;
+
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    counter.textContent = formatNumber(Math.floor(current));
+                }, stepDuration);
+
+                counter.dataset.animated = 'true';
+            });
+        }
+
+        // Animate counters on current slide
+        animateCountersOnSlide(currentSlide);
+
+        // Listen for messages from presenter
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'slideChange') {
+                goToSlide(e.data.slideIndex);
+                animateCountersOnSlide(e.data.slideIndex);
+            }
+        });
+
+        // Fullscreen on F key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'f' || e.key === 'F') {
+                e.preventDefault();
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+        `);
+        audienceDoc.close();
+    }
+
+    syncAudienceWindow() {
+        if (this.audienceWindow && !this.audienceWindow.closed) {
+            this.audienceWindow.postMessage({
+                type: 'slideChange',
+                slideIndex: this.currentSlide
+            }, '*');
+        }
+    }
+
+    updatePresenterNotes() {
+        const notesBody = document.getElementById('presenterNotesBody');
+        const activeSlide = this.slides[this.currentSlide];
+        const slideNotes = activeSlide.querySelector('.presenter-notes .notes-content');
+
+        if (slideNotes) {
+            notesBody.innerHTML = slideNotes.innerHTML;
+        } else {
+            notesBody.innerHTML = '<p class="no-notes">No presenter notes for this slide.</p>';
+        }
+    }
 }
 
 // ==========================================
@@ -259,6 +477,8 @@ document.addEventListener('DOMContentLoaded', () => {
   Page Up/Down       -  Navigate slides
   Home / End         -  First / Last slide
   F                  -  Toggle fullscreen
+  P                  -  Toggle presenter notes
+  A                  -  Toggle audience window (TV)
 
 %c UAE's First AI-Powered SAP Integrator
 `,

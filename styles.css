@@ -2803,6 +2803,274 @@ kbd {
 }
 
 /* =========================================
+   Presenter Notes (Toggle with P key)
+   ========================================= */
+/* Hidden notes inside slides - used as data source */
+.presenter-notes {
+    display: none !important;
+}
+
+/* External notes panel - Light Theme for Readability */
+.presenter-notes-panel {
+    position: fixed;
+    right: -450px;
+    top: 0;
+    width: 420px;
+    height: 100vh;
+    background: #ffffff;
+    color: #333333;
+    padding: 25px;
+    overflow-y: auto;
+    z-index: 100000;
+    border-left: 4px solid var(--primary);
+    box-shadow: -5px 0 30px rgba(0, 0, 0, 0.15);
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.8;
+    transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+body.presenter-mode .presenter-notes-panel {
+    right: 0;
+}
+
+.no-notes {
+    color: #888888;
+    font-style: italic;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.notes-body h4 {
+    color: var(--primary);
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 25px 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.notes-body h4:first-child {
+    margin-top: 0;
+}
+
+.notes-body p {
+    color: #444444;
+    margin-bottom: 12px;
+    font-style: normal;
+    background: #f5f5f5;
+    padding: 12px 15px;
+    border-radius: 6px;
+    border-left: 3px solid var(--primary);
+}
+
+.notes-body ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 15px 0;
+}
+
+.notes-body ul li {
+    color: #333333;
+    padding: 10px 0;
+    padding-left: 22px;
+    position: relative;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.notes-body ul li:last-child {
+    border-bottom: none;
+}
+
+.notes-body ul li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--primary);
+    font-size: 1.2rem;
+    line-height: 1.4;
+}
+
+.notes-body ul li strong {
+    color: #1a1a1a;
+    font-weight: 600;
+    display: inline;
+}
+
+body.presenter-mode .slide-content {
+    margin-right: 420px;
+}
+
+body.presenter-mode .keyboard-hints::after {
+    content: ' | P: Exit Presenter Mode';
+    color: var(--primary);
+}
+
+.notes-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 20px;
+    background: #f8f8f8;
+    margin: -25px -25px 20px -25px;
+    padding: 18px 25px;
+}
+
+.notes-header i {
+    font-size: 1.2rem;
+}
+
+.presenter-mode-indicator {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--primary), #8B0000);
+    color: white;
+    padding: 12px 30px;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    z-index: 100001;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 20px rgba(200, 16, 46, 0.4);
+    text-align: center;
+    max-width: 90%;
+}
+
+body.presenter-mode .presenter-mode-indicator {
+    display: block;
+}
+
+/* =========================================
+   Concerns Section
+   ========================================= */
+.slide-concerns {
+    background: var(--bg-dark);
+}
+
+.concerns-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin-top: 30px;
+}
+
+.concern-card {
+    background: var(--bg-white);
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition-fast);
+}
+
+.concern-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.concern-header,
+.response-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.concern-header h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.response-header h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--green);
+    margin: 0;
+}
+
+.concern-icon,
+.response-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.concern-icon.red {
+    background: rgba(230, 57, 80, 0.15);
+    color: var(--red);
+}
+
+.response-icon.green {
+    background: rgba(0, 168, 84, 0.15);
+    color: var(--green);
+}
+
+.concern-text {
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--text-dark);
+    background: rgba(230, 57, 80, 0.08);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--red);
+    line-height: 1.5;
+}
+
+.response-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.response-list li {
+    font-size: 0.85rem;
+    color: var(--text-medium);
+    padding: 8px 0;
+    padding-left: 20px;
+    position: relative;
+    border-bottom: 1px solid var(--bg-accent);
+    line-height: 1.5;
+}
+
+.response-list li:last-child {
+    border-bottom: none;
+}
+
+.response-list li::before {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-size: 0.7rem;
+}
+
+.response-list li strong {
+    color: var(--text-dark);
+}
+
+/* =========================================
    Responsive Design
    ========================================= */
 @media (max-width: 1400px) {
@@ -2849,6 +3117,10 @@ kbd {
 
     .mega-title .line-2 {
         font-size: 3rem;
+    }
+
+    .concerns-grid {
+        grid-template-columns: 1fr;
     }
 
     .challenges-container,
@@ -3019,6 +3291,15 @@ kbd {
 
     .benefits-grid {
         grid-template-columns: 1fr;
+    }
+
+    .concerns-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .concern-card {
+        padding: 20px;
     }
 
     .cascade-level {
